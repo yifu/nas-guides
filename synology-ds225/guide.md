@@ -64,6 +64,18 @@ Insérer les deux disques dans les tiroirs en façade (fixation sans outil pour 
 
 > **Adresse IP :** dans l'interface de la box, réserver dès maintenant une adresse IP fixe pour le NAS (bail DHCP statique, associé à son adresse MAC, visible dans la liste des appareils connectés). C'est plus simple que de fixer l'adresse dans DSM, et la box reste seule maître du plan d'adressage.
 
+::: Livebox 6 et 7 (Orange)
+
+Ouvrir `http://192.168.1.1` depuis un appareil du réseau. Le mot de passe administrateur est, par défaut, fait des 8 premiers caractères de la clé Wi-Fi imprimée sous la box (sauf s'il a été changé). Puis :
+
+- **Paramètres avancés** (en bas de page), **Réseau**, onglet **DHCP**.
+
+- Section **Baux DHCP statiques** : choisir le NAS dans la liste des équipements connectés, saisir l'adresse IP, puis **Ajouter**. Si le NAS n'est pas encore branché, choisir **Équipement** en bas de la liste et saisir son adresse MAC (étiquette sous le NAS).
+
+Réserver de préférence l'adresse que la box a déjà donnée au NAS : des utilisateurs ont vu la Livebox accepter une réservation tout en continuant d'afficher l'ancienne adresse. Si l'adresse change, redémarrer le NAS pour qu'il renouvelle son bail, puis vérifier en 2.3.
+
+:::
+
 ## 2.2 L'assistant d'installation
 
 Depuis un ordinateur du même réseau, ouvrir `find.synology.com` dans un navigateur. Si la page ne trouve rien, utiliser Synology Assistant (rubrique Desktop Utilities du centre de téléchargement Synology), ou taper directement l'adresse IP du NAS suivie de `:5000`, par exemple `http://192.168.1.20:5000`.
