@@ -200,9 +200,31 @@ Dans **Control Panel > Notification**, onglet **Email** : activer les notificati
 
 ## 6.3 Comptes et accès
 
+### Séparer administration et usage quotidien
+
+C'est le même principe que `root` et le compte utilisateur sous Linux, et il s'applique même quand la même personne utilise les deux comptes. Le compte du quotidien est celui qu'on monte dans le Finder et dont le mot de passe reste dans le trousseau du Mac : c'est donc celui qu'un logiciel malveillant sur le Mac utiliserait. S'il était administrateur :
+
+- il aurait accès à tout, car DSM donne par défaut au groupe `administrators` la lecture et l'écriture sur tous les dossiers partagés, `TimeMachine` compris : un rançongiciel sur le Mac chiffrerait les données du NAS **et** les sauvegardes ;
+
+- il pourrait tout défaire : supprimer les snapshots non immuables, changer les réglages, effacer des dossiers ;
+
+- la double authentification ne le protégerait pas : elle ne s'applique qu'à la connexion web à DSM, et un partage SMB monté dans le Finder ne demande que le mot de passe.
+
+D'où trois sortes de comptes :
+
+|= 120.0 180.0 181.9 header
+| Compte | Sert à | Droits |
+| Administrateur (le tien) | Administrer DSM depuis le navigateur, rien d'autre. Jamais monté dans le Finder. | Groupe `administrators`, double authentification. |
+| Quotidien (par exemple `papa`) | Déposer et consulter des fichiers sur le NAS depuis le Finder. | Groupe `users` seulement. Lecture et écriture sur les dossiers de données, rien sur `TimeMachine`. SMB, plus File Station ou Synology Photos si besoin. |
+| Time Machine (`tm-macbook`…) | La sauvegarde d'un Mac, et seulement elle (8.3). | Groupe `users` seulement. Lecture et écriture sur `TimeMachine`, SMB seul. |
+
+Si personne ne dépose de fichiers directement sur le NAS et qu'il ne sert qu'à Time Machine, le compte du quotidien est inutile : le compte administrateur et les comptes Time Machine suffisent.
+
+### Réglages
+
 - **Double authentification** pour le compte administrateur : menu en haut à droite, **Personal > Security > 2-Factor Authentication**, avec une application TOTP. Garder les codes de secours avec la clé de récupération.
 
-- **Un compte non administrateur** pour chaque personne qui doit déposer ou consulter des fichiers sur le NAS. Le compte administrateur reste le tien.
+- **Compte du quotidien :** **Control Panel > User & Group > User > Create**, groupe `users` seulement, droits sur les dossiers de données comme dans le tableau.
 
 - **Control Panel > Security > Account :** vérifier que le blocage automatique (Auto Block) est activé : une adresse IP qui se trompe trop souvent de mot de passe est bloquée.
 
