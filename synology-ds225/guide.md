@@ -50,7 +50,7 @@ Deux disques de même capacité : avec SHR, toute capacité au-delà de celle du
 
 ## 1.3 À côté du NAS
 
-- Un câble RJ45 vers la box, sur le port **2,5 GbE** si la box en a un aussi, sinon n'importe lequel des deux.
+- Un câble RJ45 vers la box ou un switch, branché sur le port **2,5 GbE** du NAS. Il ne sert pleinement que si le reste du chemin est aussi en 2,5 Gbit/s (switch 2,5 GbE, adaptateur USB-C 2,5 GbE sur le Mac) : sinon, c'est le maillon le plus lent qui fixe la vitesse. Un câble Cat 5e suffit pour 2,5 Gbit/s sur les distances d'une maison ; un vieux câble Cat 5 fait retomber la liaison à 1 Gbit/s sans prévenir (vérification en 8.7).
 
 - Un onduleur (UPS) avec port USB, conseillé : DSM sait s'arrêter proprement quand la batterie faiblit (section 6.4). Une coupure brutale pendant une écriture est le pire moment pour un système de fichiers.
 
@@ -363,7 +363,7 @@ Dans **Control Panel > File Services**, onglet **SMB** : cocher **Enable SMB ser
 | Enable SMB2 lease | Coché | Recommandé par Synology pour Time Machine. |
 | Enable SMB durable handles | Coché | Recommandé par Synology : la connexion survit à une courte coupure (Wi-Fi). Désactive le verrouillage de fichiers entre protocoles, sans effet ici. |
 | Transport encryption mode | Valeur par défaut | Le chiffrement SMB ralentit les transferts, et la sauvegarde est déjà chiffrée par le Mac. |
-| Server signing | Valeur par défaut | Voir la section 8.8 en cas d'échec sous macOS Tahoe. |
+| Server signing | Valeur par défaut | Voir la section 8.9 en cas d'échec sous macOS Tahoe. |
 
 Laisser **AFP** désactivé : Apple a retiré la sauvegarde Time Machine par AFP, et Synology recommande SMB seul.
 
@@ -379,7 +379,7 @@ Le dossier apparaît alors directement dans la liste des disques de sauvegarde p
 
 ## 8.6 Côté Mac
 
-Sur chaque Mac, de préférence **branché en Ethernet et sur secteur** pour la première sauvegarde, qui peut durer plusieurs heures :
+Sur chaque Mac, de préférence **branché en Ethernet et sur secteur** pour la première sauvegarde, qui peut durer plusieurs heures (8.7) :
 
 - **Réglages Système > Général > Time Machine** (macOS 13 Ventura et suivants), **Ajouter un disque de sauvegarde**.
 
@@ -393,9 +393,62 @@ Sur chaque Mac, de préférence **branché en Ethernet et sur secteur** pour la 
 
 !! **Mot de passe de chiffrement Time Machine :** le ranger dans ton gestionnaire de mots de passe et dans celui du propriétaire du Mac. Le Mac le garde dans son trousseau, mais le jour où il faut restaurer sur un Mac neuf, ou après la perte du Mac, ce mot de passe est le seul moyen de lire la sauvegarde.
 
-Pendant la première sauvegarde, empêcher la mise en veille : **Réglages Système > Batterie > Options**, « Empêcher la suspension d'activité automatique sur l'adaptateur secteur lorsque l'écran est éteint » (sur un portable), ou laisser simplement l'écran allumé.
+## 8.7 Première sauvegarde : durée et vitesse
 
-## 8.7 Vérifier
+### Combien de temps
+
+La première sauvegarde envoie tout ; les suivantes ne transfèrent que les changements et prennent quelques minutes, en Wi-Fi comme en Ethernet. Ordres de grandeur pour cette première fois :
+
+|= 120.0 85.0 92.0 92.0 92.9 header
+| Liaison Mac ↔ NAS | Débit effectif | 300 Go | 500 Go | 1 To |
+| 2,5 GbE de bout en bout | 80 à 180 Mo/s | 30 min à 1 h | 45 min à 1 h 45 | 1 h 30 à 3 h 30 |
+| Ethernet 1 Gbit/s | 40 à 80 Mo/s | 1 à 2 h | 2 à 4 h | 4 à 7 h |
+| Wi-Fi correct (Wi-Fi 5 ou 6, près de la box) | 15 à 40 Mo/s | 2 à 6 h | 4 à 9 h | 7 à 18 h |
+| Wi-Fi médiocre (loin, murs) | 5 à 15 Mo/s | 6 à 17 h | 9 h à 1 jour | 1 à 2,5 jours |
+
+On reste loin du débit théorique du lien (environ 280 Mo/s en 2,5 GbE, 115 Mo/s en 1 Gbit/s) :
+
+- **Petits fichiers :** des centaines de milliers de petits fichiers (bibliothèque Mail, code, caches d'applications) vont beaucoup moins vite que quelques grosses vidéos. Pour eux, c'est le nombre de fichiers qui compte, pas le débit : en 2,5 GbE, ils iront à peine plus vite qu'en 1 Gbit/s, alors que photos et vidéos en profitent pleinement.
+
+- **Image disque réseau :** Time Machine écrit dans un `sparsebundle` à travers SMB, plus lent qu'un disque USB.
+
+- **Disques du NAS :** deux disques durs en miroir écrivent au mieux 150 à 250 Mo/s en séquentiel, bien moins quand les écritures sont dispersées. En 2,5 GbE, ce sont eux, et non le réseau, qui fixent la limite.
+
+- **Priorité basse :** Time Machine tourne en tâche de fond avec une priorité d'entrées-sorties réduite, pour ne pas gêner l'utilisateur. Sans le réglage ci-dessous, compter le bas des fourchettes.
+
+Rien de grave si la sauvegarde s'interrompt (veille, Mac débranché, réseau coupé) : Time Machine reprend là où il en était, sans recommencer. Le plus simple : lancer la première sauvegarde le soir, Mac sur secteur et en Ethernet, et la laisser tourner la nuit. Pour un portable, empêcher la mise en veille : **Réglages Système > Batterie > Options**, « Empêcher la suspension d'activité automatique sur l'adaptateur secteur lorsque l'écran est éteint », ou laisser l'écran allumé.
+
+### Lever le bridage de priorité
+
+Pendant la première sauvegarde seulement, on peut lever la limitation des entrées-sorties de faible priorité, dans le Terminal du Mac :
+
+```
+# Let low-priority I/O (Time Machine) run at full speed until the next reboot
+sudo sysctl debug.lowpri_throttle_enabled=0
+# Back to the default once the first backup is done
+sudo sysctl debug.lowpri_throttle_enabled=1
+```
+
+Le réglage ne survit pas au redémarrage : sans la seconde commande, il disparaît de toute façon au prochain démarrage. Le Mac est un peu moins réactif pendant ce temps, car Time Machine ne cède plus la place aux applications. C'est sans intérêt pour les sauvegardes suivantes, qui sont courtes.
+
+### Vérifier la vitesse des liens
+
+Une liaison retombée en 1 Gbit/s (câble Cat 5, port mal négocié) ne prévient de rien : la sauvegarde est juste deux fois plus lente. À vérifier une fois, avant la première sauvegarde.
+
+**Sur le Mac**, adaptateur branché :
+
+```
+# List network ports and their device names (enX)
+networksetup -listallhardwareports
+# Replace en7 with the adapter's device name; expect "2500baseT <full-duplex>"
+ifconfig en7 | grep media
+```
+
+`1000baseT` à la place de `2500baseT` signale une liaison en 1 Gbit/s : changer de câble ou de port du switch. Les adaptateurs USB-C 2,5 GbE courants (puce Realtek RTL8156) fonctionnent sans pilote sous macOS ; l'adaptateur doit être branché sur un port USB-C du Mac (USB 3 au minimum), pas sur un hub USB 2.
+
+**Sur le NAS**, **Control Panel > Network > Network Interface** : l'interface du port 2,5 GbE doit afficher **2500 Mbps, Full duplex**. Les voyants du switch indiquent souvent la vitesse aussi (couleur différente selon la vitesse, voir sa notice).
+
+## 8.8 Vérifier
 
 Une fois la première sauvegarde terminée, dans le Terminal du Mac :
 
@@ -412,7 +465,7 @@ smbutil statshares -a
 
 Côté NAS, **Control Panel > Shared Folder**, dossier `TimeMachine` : l'occupation doit refléter la taille de la première sauvegarde. Et dans **Resource Monitor > Connections**, la connexion du compte `tm-macbook` doit apparaître en SMB3 pendant une sauvegarde.
 
-## 8.8 Dépannage
+## 8.9 Dépannage
 
 ### « Un problème est survenu lors de la connexion au serveur »
 
@@ -463,6 +516,7 @@ Le paquet **Hyper Backup** de Synology sait sauvegarder des dossiers partagés, 
 ☐ Mot de passe de chiffrement Time Machine de chaque Mac rangé.
 ☐ E-mail de test des notifications bien reçu.
 ☐ Scrubbing trimestriel et tests S.M.A.R.T. planifiés.
+☐ Vitesse des liaisons vérifiée côté Mac et côté NAS (2500 Mbps attendus en 2,5 GbE).
 ☐ Première sauvegarde Time Machine terminée et un fichier restauré avec succès, sur chaque Mac.
 ☐ Snapshots planifiés sur chaque dossier, et `#snapshot` visible sur les dossiers de données.
 ☐ Au bout d'un mois : occupation des snapshots du dossier `TimeMachine` vérifiée (Calculate Size).
