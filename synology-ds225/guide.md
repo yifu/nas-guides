@@ -302,6 +302,20 @@ Deux limites, qui se complètent :
 | iMac (300 Go de données) | 300 Go | 800 Go |
 | **Dossier `TimeMachine`** | | **2 To** (somme des deux) |
 
+### Estimer, puis ajuster
+
+**Avant la première sauvegarde**, lire l'espace **utilisé** sur le Mac, pas la capacité de son disque : **Réglages Système > Général > Stockage**, ou **À propos de ce Mac > Plus d'infos > Stockage**. Ce chiffre majore un peu le besoin, car il compte macOS lui-même, les caches et une partie des « Données système » (instantanés locaux, fichiers d'échange), que Time Machine ne sauvegarde pas : la marge joue en ta faveur.
+
+Choisir le facteur selon l'usage du Mac :
+
+- **× 2** pour des documents, des mails et quelques photos : l'historique est déjà long.
+
+- **× 3** pour de la vidéo, une grosse bibliothèque photo souvent retouchée ou des machines virtuelles : chaque modification renvoie de gros fichiers, et l'historique se consomme vite.
+
+**Après la première sauvegarde**, regarder ce qu'elle occupe réellement : **Control Panel > Shared Folder**, dossier `TimeMachine` (ou **Control Panel > User & Group**, compte du Mac, **Edit > Quota**, qui montre l'usage du compte). Ajuster alors le quota du compte à deux ou trois fois cette valeur, et le quota du dossier en conséquence.
+
+> **Le quota se change à tout moment :** le relever ne casse rien, Time Machine en profite simplement pour garder un historique plus long. Un Mac dont le disque se remplit au fil des années se gère donc en relevant son quota, sans rien prévoir de démesuré au départ. Le baisser en dessous de l'occupation actuelle est en revanche à éviter : Time Machine devra supprimer d'anciennes sauvegardes pour retrouver de la place, ou échouera s'il n'en libère pas assez.
+
 ## 8.2 Créer le dossier partagé
 
 **Control Panel > Shared Folder > Create > Create Shared Folder**, et dans l'assistant :
