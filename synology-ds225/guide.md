@@ -248,7 +248,7 @@ Si personne ne dépose de fichiers directement sur le NAS et qu'il ne sert qu'à
 
 Un snapshot est une image en lecture seule d'un dossier partagé à un instant donné. Btrfs le prend en une fraction de seconde et ne stocke ensuite que ce qui change : tant que rien ne bouge, il ne coûte presque rien. Il protège contre la suppression accidentelle, la mauvaise modification, et le rançongiciel qui chiffre les fichiers depuis un ordinateur : un snapshot ne se modifie pas depuis le réseau, même avec le compte du propriétaire des fichiers.
 
-Un snapshot **n'est pas une sauvegarde** : il vit sur les mêmes disques. Si le pool meurt, les snapshots meurent avec lui (section 9).
+Un snapshot **n'est pas une sauvegarde** : il vit sur les mêmes disques. Si le pool meurt, les snapshots meurent avec lui (section 10).
 
 > **Snapshots immuables :** une option rend un snapshot impossible à supprimer pendant une période de protection, par qui que ce soit, administrateur compris. C'est la défense contre un attaquant qui aurait pris le compte administrateur et effacerait les snapshots avant de chiffrer les données. Synology recommande une protection de 7 à 14 jours. Contrepartie : pendant cette période, l'espace occupé par ces snapshots ne peut pas être libéré, et un dossier partagé qui a des snapshots immuables ne peut pas être supprimé.
 
@@ -258,7 +258,7 @@ Un snapshot **n'est pas une sauvegarde** : il vit sur les mêmes disques. Si le 
 
 ## 7.3 Dossiers de données
 
-Pour chaque dossier où la famille range des fichiers (par exemple `Famille`, `Photos`), dans **Snapshot Replication > Snapshots**, sélectionner le dossier, puis :
+Pour chaque dossier où la famille range des fichiers (par exemple `Famille`, et `homes` qui reçoit les photos en section 9), dans **Snapshot Replication > Snapshots**, sélectionner le dossier, puis :
 
 - **Settings > Schedule :** cocher **Enable snapshot schedule**, toutes les **4 heures**. Cocher **Enable immutable snapshots**, protection **7 jours**.
 
@@ -504,9 +504,134 @@ L'image disque est abîmée. Avant d'accepter (ce qui efface tout l'historique),
 
 Time Machine supprime les anciennes sauvegardes quand le quota est atteint, mais s'il manque plus de place que ce qu'une sauvegarde peut libérer, il échoue. Augmenter le quota du compte (Control Panel > User & Group, compte, **Edit > Quota**), et celui du dossier en conséquence.
 
-# 9. Au-delà de ce guide : une vraie sauvegarde
+# 9. Photos et vidéos
 
-Le NAS protège contre la panne d'un disque (SHR), les fichiers effacés et le rançongiciel (snapshots), et sauvegarde les Mac (Time Machine). Il ne protège pas contre ce qui frappe le NAS entier : vol, incendie, dégât des eaux, surtension, erreur dans DSM. Pour les sauvegardes Time Machine, c'est acceptable : les originaux sont sur les Mac. Pour les fichiers qui ne vivent **que** sur le NAS (photos de famille rangées directement dessus, par exemple), il faut une copie ailleurs.
+Objectif : une copie de la bibliothèque Photos (iPhone, iCloud, Mac) sur le NAS, rangée et consultable sans dépendre d'Apple.
+
+> **iCloud Photos n'est pas une sauvegarde :** c'est une synchronisation. Une photo supprimée sur l'iPhone disparaît aussi d'iCloud et du Mac, après 30 jours dans « Supprimés récemment ». Une copie sur le NAS, protégée par les snapshots, est justement ce qui manque.
+
+## 9.1 Trois chemins possibles
+
+|= 95.0 105.0 140.0 141.9 header
+| Méthode | Ce qu'elle copie | Avantages | Limites |
+| App Synology Photos sur l'iPhone (9.3) | La photothèque vue par l'iPhone, au fil de l'eau. | Automatique, aucun Mac nécessaire. Photos consultables dans l'app. | iOS freine le travail en arrière-plan. Les originaux restés dans iCloud doivent d'abord être rapatriés sur l'iPhone. |
+| Export depuis Photos sur le Mac (9.4) | Toute la bibliothèque, ancienne comprise, rangée par année et mois. | Complet, métadonnées conservées, relançable sans tout refaire. | Mac allumé, commande à relancer de temps en temps. Outil en ligne de commande. |
+| icloudpd sur le NAS (9.6) | Directement depuis iCloud. | Ni Mac ni iPhone. | Outil non officiel, réauthentification tous les deux mois, incompatible avec la protection avancée des données d'iCloud. |
+
+**Choisir l'un des deux premiers**, selon la présence d'un Mac allumé régulièrement : l'export depuis le Mac s'il y en a un, l'app de l'iPhone sinon. Les combiner remplit le NAS de doublons : avec iCloud Photos, l'iPhone voit toute la bibliothèque, comme le Mac, et les deux enverraient les mêmes photos dans deux dossiers différents. icloudpd reste une option de dépannage.
+
+Dans tous les cas, si un Mac a la bibliothèque Photos, la section 9.5 vaut la peine : elle fait de Time Machine une seconde sauvegarde complète des photos, sans rien installer.
+
+## 9.2 Synology Photos et l'espace personnel
+
+Synology Photos est l'application de Synology pour les photos : un site web sur le NAS et des apps pour iPhone et Apple TV, avec une vue chronologique, des albums, une carte et la reconnaissance des visages. Elle n'affiche que deux emplacements : l'**espace personnel** de chaque compte (le dossier `Photos` de son dossier personnel, dans le dossier partagé `homes`) et l'**espace partagé** (le dossier partagé `photo`). Un dossier partagé `Photos` créé à part serait visible dans le Finder, mais pas dans Synology Photos : les photos vont donc dans le dossier personnel du compte du quotidien.
+
+- **Dossiers personnels :** **Control Panel > User & Group > Advanced**, section **User Home**, cocher **Enable user home service**. DSM crée le dossier partagé `homes`, et chaque compte y a son dossier, qui apparaît sous le nom `home` dans le Finder. Les comptes Time Machine en reçoivent un aussi, dont ils n'ont pas l'usage : pour qu'ils ne puissent rien y stocker, leur fixer un quota de 1 Go sur `homes` (compte, **Edit > Quota**).
+
+- **Paquet :** **Package Center**, installer **Synology Photos**.
+
+- **Droits :** dans **Control Panel > User & Group**, compte du quotidien (6.3), **Edit > Applications** : autoriser **Synology Photos**, en plus de SMB.
+
+- **Snapshots :** appliquer au dossier `homes` les réglages de 7.3 (toutes les 4 heures, immuables 7 jours, Smart Retention). Les photos sont le meilleur exemple de données à protéger contre une suppression ou un rançongiciel.
+
+> **Espace personnel plutôt que partagé :** depuis iOS 16, l'app ne connaît plus le nom de l'iPhone et sauvegarde dans un dossier générique `iPhone`. Dans l'espace partagé, tous les iPhone de la famille rempliraient le même dossier `/photo/MobileBackup/iPhone`. Dans l'espace personnel, chaque compte a le sien : `/home/Photos/MobileBackup/iPhone`. Pour partager quelques albums avec la famille, Synology Photos sait créer des liens de partage sans déplacer les fichiers.
+
+**Formats Apple (HEIC, HEVC) :** Synology Photos garde les originaux tels quels et fabrique à côté des aperçus JPEG pour l'affichage. Pour les photos HEIC et les vidéos HEVC des iPhone, ces aperçus sont produits par **Synology Image Assistant**, un petit logiciel pour Mac (Centre de téléchargement Synology), ou par l'app iPhone (**Plus > Réglages > Image Assistant**). Sans lui, ces fichiers s'affichent en icônes grises dans Synology Photos, mais les originaux sont bien là.
+
+**Reconnaissance des visages :** elle fonctionne mieux avec la barrette de mémoire de 4 Go (1.1). Elle n'est pas indispensable : la vue chronologique et les dossiers suffisent pour retrouver une photo.
+
+**Place nécessaire :** la taille de la photothèque se lit sur l'iPhone, dans **Réglages > [nom] > iCloud** (détail du stockage, ligne Photos). La prévoir sur le volume, avec de la marge pour les snapshots, en plus des quotas Time Machine.
+
+## 9.3 Sauvegarde automatique depuis l'iPhone
+
+- Installer **Synology Photos** depuis l'App Store. Se connecter avec l'adresse du NAS (`nas-famille.local` ou son adresse IP) et le compte du quotidien.
+
+- **Plus > Activer la sauvegarde des photos** (Enable Photo Backup), destination **Espace personnel** (Personal Space), dossier par défaut.
+
+- Dans les **Réglages** d'iOS, app **Photos Mobile** : autoriser les **notifications** (Synology s'en sert pour faire avancer la sauvegarde en arrière-plan, sans rien afficher) et l'**actualisation en arrière-plan**.
+
+- Pour la première fois, iPhone sur secteur et en Wi-Fi, activer la **sauvegarde ciblée** (Focused Backup) en touchant l'état de la sauvegarde, onglet **Plus**, et laisser l'app ouverte.
+
+Points à connaître :
+
+- **Originaux dans iCloud :** avec « Optimiser le stockage de l'iPhone », l'iPhone ne garde qu'une version réduite des photos anciennes, et l'original doit être rapatrié depuis iCloud avant d'être envoyé au NAS. La première sauvegarde peut alors être très longue, ou bloquer sur certaines photos (icône d'erreur dans la vue chronologique). C'est le principal argument pour l'export depuis le Mac (9.4) quand il y en a un.
+
+- **Photos retouchées :** une photo modifiée avant sa sauvegarde n'est envoyée que dans sa version modifiée. Une photo modifiée après sa sauvegarde est envoyée à nouveau, comme un nouveau fichier.
+
+- **Hors de la maison :** avec QuickConnect désactivé (6.3), la sauvegarde ne se fait que sur le Wi-Fi de la maison. Elle reprend au retour, sans rien perdre.
+
+!! **Ne pas utiliser « Libérer de l'espace » de l'app Synology Photos** avec iCloud Photos activé : supprimer les photos de l'iPhone les supprime aussi d'iCloud et de tous les appareils. Elles ne resteraient que sur le NAS.
+
+## 9.4 Toute la bibliothèque depuis le Mac
+
+L'outil libre **osxphotos** lit la bibliothèque Photos du Mac et l'exporte dans des dossiers ordinaires, rangés par année et par mois, avec les métadonnées (date, lieu, titres, mots-clés, personnes) dans un fichier XMP à côté de chaque photo. Il mémorise ce qu'il a déjà exporté : relancer la même commande n'envoie que les nouveautés.
+
+**1. Originaux sur le Mac.** Dans Photos, **Photos > Réglages > iCloud**, choisir **Télécharger les originaux sur ce Mac**, puis attendre la fin du téléchargement (l'état est affiché en bas de la vue Photothèque). Il faut la place correspondante sur le disque du Mac. Faute de place, l'option `--download-missing` de la commande ci-dessous fait télécharger chaque original manquant au fil de l'export, beaucoup plus lentement.
+
+**2. Le partage du NAS.** Dans le Finder, **Aller > Se connecter au serveur**, `smb://nas-famille.local/home`, avec le compte du quotidien. Le dossier personnel est monté sous `/Volumes/home`.
+
+**3. Installer osxphotos**, dans l'app Terminal (pas iTerm2, pour les autorisations), avec Homebrew (`brew.sh`) déjà installé :
+
+```
+# uv installs and updates Python command-line tools
+brew install uv
+uv tool install --python 3.13 osxphotos
+# Puts ~/.local/bin in the PATH; open a new Terminal window afterwards
+uv tool update-shell
+```
+
+**4. Exporter :**
+
+```
+# Incremental export of the whole Photos library to the NAS
+osxphotos export /Volumes/home/Photos/Bibliotheque \
+  --update \
+  --directory "{created.year}/{created.mm}" \
+  --download-missing \
+  --sidecar xmp \
+  --retry 3 \
+  --report ~/Pictures/osxphotos-nas.csv
+```
+
+- `--update` : n'exporte que ce qui est nouveau ou modifié depuis la fois précédente.
+
+- `--directory` : un dossier par année, puis par mois (`2024/07`).
+
+- `--download-missing` : fait télécharger par Photos les originaux absents du Mac.
+
+- `--sidecar xmp` : métadonnées dans un fichier `.xmp` lisible par la plupart des logiciels photo.
+
+- `--retry 3` : réessaie en cas d'erreur réseau passagère.
+
+- `--report` : liste de ce qui a été exporté, ignoré ou manquant, à regarder après chaque passage.
+
+macOS demande au premier lancement d'autoriser le Terminal à accéder aux photos et à piloter Photos : accepter. Si osxphotos ne parvient toujours pas à lire la bibliothèque, donner au Terminal l'**Accès complet au disque** (**Réglages Système > Confidentialité et sécurité**).
+
+La première exécution est longue, de l'ordre de la première sauvegarde Time Machine (8.7). Ensuite, relancer la même commande de temps en temps, une fois par mois par exemple, partage monté : elle ne copie que les photos ajoutées ou retouchées depuis. Les photos retouchées sont exportées deux fois, l'original et la version modifiée (suffixe `_edited`), et les Live Photos donnent une image et une courte vidéo. Une photo supprimée dans Photos n'est **pas** supprimée du NAS : c'est voulu, c'est ce qui en fait une sauvegarde.
+
+Le dossier `Bibliotheque` apparaît dans Synology Photos, espace personnel, vue **Dossiers**, et ses photos dans la vue chronologique.
+
+## 9.5 La bibliothèque Photos et Time Machine
+
+Time Machine sauvegarde la bibliothèque Photos du Mac comme n'importe quel fichier, mais seulement ce qui est réellement sur le disque du Mac. Avec « Optimiser le stockage du Mac », les originaux sont dans iCloud et le Mac n'a que des versions réduites : Time Machine ne sauvegarde que celles-là. Avec **Télécharger les originaux sur ce Mac** (9.4, étape 1), Time Machine garde au contraire une copie complète de la bibliothèque, albums, retouches et visages compris, restaurable telle quelle dans Photos. Penser alors à compter la taille de la bibliothèque dans le quota Time Machine de ce Mac (8.1).
+
+> **Ne pas déplacer la bibliothèque Photos sur le NAS :** Photos n'est pas prévu pour une bibliothèque sur un partage réseau, qui risque de s'abîmer. La bibliothèque reste sur le disque du Mac ; le NAS en reçoit des copies (Time Machine, export de 9.4).
+
+## 9.6 Sans Mac : icloudpd
+
+**icloudpd** (iCloud Photos Downloader) télécharge la photothèque directement depuis iCloud, sans Mac ni iPhone. Le DS225+ peut le faire tourner dans un conteneur (paquet **Container Manager**). Il copie les nouvelles photos à intervalle régulier, rangées par date. Ses contraintes en font une solution pour toi plutôt que pour un utilisateur seul :
+
+- **Protection avancée des données** d'iCloud désactivée, et **Accès aux données iCloud sur le web** activé : icloudpd se fait passer pour le site icloud.com.
+
+- **Réauthentification tous les deux mois** : Apple fait expirer la session, et il faut retaper un code de validation reçu sur un appareil Apple. icloudpd sait envoyer un e-mail quand la session expire.
+
+- **Outil bénévole et non officiel**, qui dépend d'une interface non publique d'Apple : il peut cesser de fonctionner du jour au lendemain. Ses mainteneurs cherchent d'ailleurs un repreneur.
+
+La documentation du projet, `icloud-photos-downloader.github.io`, décrit l'installation en conteneur et l'authentification. Destination conseillée : un sous-dossier du dossier personnel, par exemple `/volume1/homes/papa/Photos/iCloud`, pour que Synology Photos l'affiche.
+
+# 10. Au-delà de ce guide : une vraie sauvegarde
+
+Le NAS protège contre la panne d'un disque (SHR), les fichiers effacés et le rançongiciel (snapshots), et sauvegarde les Mac (Time Machine) et les photos (section 9). Il ne protège pas contre ce qui frappe le NAS entier : vol, incendie, dégât des eaux, surtension, erreur dans DSM. Pour les sauvegardes Time Machine et les photos, qui existent aussi sur les Mac et dans iCloud, c'est acceptable. Pour les fichiers qui ne vivent **que** sur le NAS, il faut une copie ailleurs.
 
 Le paquet **Hyper Backup** de Synology sait sauvegarder des dossiers partagés, chiffrés et versionnés, vers un disque USB branché sur le NAS (à garder ailleurs entre deux sauvegardes), vers Synology C2 ou un autre stockage en ligne, ou vers une machine distante par rsync, par exemple chez toi à travers Tailscale. Ce sera l'objet d'un guide suivant si besoin.
 
@@ -520,4 +645,6 @@ Le paquet **Hyper Backup** de Synology sait sauvegarder des dossiers partagés, 
 ☐ Première sauvegarde Time Machine terminée et un fichier restauré avec succès, sur chaque Mac.
 ☐ Snapshots planifiés sur chaque dossier, et `#snapshot` visible sur les dossiers de données.
 ☐ Au bout d'un mois : occupation des snapshots du dossier `TimeMachine` vérifiée (Calculate Size).
+☐ Photos : sauvegarde de l'iPhone ou export depuis le Mac fait, et quelques photos anciennes retrouvées dans Synology Photos.
+☐ Mac avec la bibliothèque Photos : « Télécharger les originaux sur ce Mac » si le disque a la place.
 ~ Une fois par an : restaurer un fichier depuis Time Machine et depuis un snapshot, pour vérifier que tout fonctionne encore.
