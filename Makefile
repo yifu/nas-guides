@@ -5,7 +5,8 @@ PYTHON ?= python3
 
 all: $(PDFS)
 
-build/nas-%.pdf: %/guide.md common/build_guide.py
+.SECONDEXPANSION:
+build/nas-%.pdf: %/guide.md $$(wildcard %/img/*) common/build_guide.py
 	@mkdir -p build
 	$(PYTHON) common/build_guide.py $< $@
 

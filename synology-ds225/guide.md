@@ -15,6 +15,8 @@ Les quatre questions de départ, et où se trouve la réponse :
 | Snapshots ? | Paquet Snapshot Replication, planifié par dossier partagé, avec une partie immuable pour les données. | 7 |
 | Dossier Time Machine ? | Dossier dédié, sans corbeille ni chiffrement de dossier, quota, un compte DSM par Mac, SMB3 et annonce Bonjour. | 8 |
 
+> **Captures d'écran :** elles viennent de la démonstration en ligne de Synology (DSM 7.3, en français) : les écrans du DS225+ en DSM 7.4 peuvent différer légèrement, mais les options sont au même endroit. Les cadres rouges numérotés montrent quoi cocher ou cliquer, dans l'ordre. La démo n'a pas de disques physiques : les écrans de stockage (sections 3 à 5) n'y existent pas et ne sont pas illustrés.
+
 !flow
 Matériel | Disques CMR, branchement sur le port 2,5 GbE, onduleur si possible.
 Installation de DSM | Assistant web, compte administrateur, mises à jour.
@@ -190,7 +192,15 @@ DSM propose aussi de chiffrer un dossier partagé (case « Protect this shared f
 
 C'est le réglage le plus important pour un NAS installé chez quelqu'un d'autre : un disque qui lâche ne se remarque pas, puisque SHR continue de fonctionner sur l'autre. Il faut que l'alerte arrive dans ta boîte mail.
 
-Dans **Control Panel > Notification**, onglet **Email** : activer les notifications, choisir le fournisseur de la boîte d'envoi (DSM propose les plus courants, dont Gmail et Outlook, ou un serveur SMTP quelconque), et mettre en destinataires ton adresse et celle des personnes qui utilisent le NAS. Envoyer un **message de test** et vérifier qu'il arrive, y compris dans les indésirables.
+Dans **Control Panel > Notification**, onglet **Email**, section E-mail : **Configurer** l'expéditeur, c'est-à-dire la boîte qui envoie les alertes. DSM propose les fournisseurs courants, dont Gmail et Outlook, connectés en un clic (**Connecter**) sans mot de passe d'application, ou un serveur SMTP quelconque. Ajouter ensuite en destinataires ton adresse et celle des personnes qui utilisent le NAS. Envoyer un **message de test** et vérifier qu'il arrive, y compris dans les indésirables.
+
+La section **Compte Synology**, en haut du même onglet, envoie les alertes à l'adresse d'un compte Synology, par les serveurs de Synology. Elle évite de configurer un expéditeur, mais demande de lier le NAS à un compte Synology : l'expéditeur Gmail ou Outlook fait la même chose sans ce lien.
+
+!img img/notif-expediteur.jpg | Panneau de configuration > Notification > E-mail : Configurer (1), choisir le fournisseur (2), puis Connecter (3).
+crop 0 80 800 545
+box 236 502 340 533 1
+box 226 283 530 314 2
+box 222 320 302 345 3
 
 ## 6.2 Vérifications régulières des disques
 
@@ -222,11 +232,22 @@ Si personne ne dépose de fichiers directement sur le NAS et qu'il ne sert qu'à
 
 ### Réglages
 
-- **Double authentification** pour le compte administrateur : menu en haut à droite, **Personal > Security > 2-Factor Authentication**, avec une application TOTP. Garder les codes de secours avec la clé de récupération.
+- **Double authentification** pour le compte administrateur : menu en haut à droite, **Personal > Security > 2-Factor Authentication** (en français : icône de personne, **Perso. > Sécurité > Authentification à 2 facteurs**), avec une application TOTP. Garder les codes de secours avec la clé de récupération.
+
+!img img/2fa.jpg | Perso. > Sécurité : choisir Authentification à 2 facteurs.
+crop 16 60 784 450
+box 40 370 762 444 1
+width 0.85
 
 - **Compte du quotidien :** **Control Panel > User & Group > User > Create**, groupe `users` seulement, droits sur les dossiers de données comme dans le tableau.
 
-- **Control Panel > Security > Account :** vérifier que le blocage automatique (Auto Block) est activé : une adresse IP qui se trompe trop souvent de mot de passe est bloquée.
+- **Control Panel > Security > Protection :** vérifier que le blocage automatique (Auto Block) est activé : une adresse IP qui se trompe trop souvent de mot de passe est bloquée.
+
+!img img/blocage-auto.jpg | Panneau de configuration > Sécurité > Protection > Blocage auto.
+crop 0 80 800 432
+box 252 91 340 121 1
+box 20 227 208 255 2
+width 0.85
 
 - **QuickConnect désactivé** (Control Panel > External Access) et **aucune redirection de port** dans la box. Le NAS n'est alors joignable que depuis le réseau local.
 
@@ -256,15 +277,41 @@ Un snapshot **n'est pas une sauvegarde** : il vit sur les mêmes disques. Si le 
 
 **Package Center**, rechercher **Snapshot Replication**, installer. Le paquet a deux parties : Snapshots (ce qui nous intéresse) et Replication (copie vers un autre NAS Synology, hors sujet ici). Le DS225+ garde au plus 128 snapshots par dossier partagé : les réglages ci-dessous restent largement en dessous.
 
+!img img/paquet-snapshot.jpg | Centre de paquets : rechercher Snapshot (1), puis Installer (2).
+crop 0 80 520 305
+box 114 94 496 124 1
+box 358 255 444 284 2
+width 0.6
+
 ## 7.3 Dossiers de données
 
-Pour chaque dossier où la famille range des fichiers (par exemple `Famille`, et `homes` qui reçoit les photos en section 9), dans **Snapshot Replication > Snapshots**, sélectionner le dossier, puis :
+Pour chaque dossier où la famille range des fichiers (par exemple `Famille`, et `homes` qui reçoit les photos en section 9), dans **Snapshot Replication > Snapshots** (en français : **Instantanés**), sélectionner le dossier, puis **Settings** (**Paramètres**) :
 
 - **Settings > Schedule :** cocher **Enable snapshot schedule**, toutes les **4 heures**. Cocher **Enable immutable snapshots**, protection **7 jours**.
 
+!img img/snap-programmer.jpg | Paramètres > Programmer : activer le calendrier (1), toutes les 4 heures (2), instantanés immuables 7 jours (3).
+crop 0 52 718 345
+box 20 132 234 156 1
+box 284 216 489 242 2
+box 44 274 406 332 3
+
 - **Settings > Retention :** **Smart Retention policy**, puis **Set Rules** : tout garder 7 jours, le dernier snapshot du jour pendant 30 jours, celui de la semaine pendant 12 semaines, celui du mois pendant 12 mois, et au minimum les 10 derniers snapshots.
 
+> **Conservation :** l'onglet commence par un bouton **Activer**. Une fois activée, une politique de conservation ne peut plus être désactivée, seulement modifiée : c'est attendu, sans elle les snapshots s'accumuleraient sans limite.
+
+!img img/snap-regles.jpg | Paramètres > Conservation > Politique de Smart Retention > Définir les règles.
+crop 83 75 634 460
+box 100 166 520 190 1
+box 100 222 520 305 2
+box 96 380 482 406 3
+width 0.8
+
 - **Settings > Advanced :** cocher **Make snapshot visible**. Un dossier `#snapshot` apparaît alors à la racine du partage, dans Finder : on y retrouve chaque version, en lecture seule, et on récupère un fichier par simple copie, sans passer par DSM.
+
+!img img/snap-avance.jpg | Paramètres > Avancé : Rendre l'instantané visible.
+crop 0 52 718 245
+box 20 189 218 211 1
+width 0.85
 
 > **Le compte :** 6 snapshots par jour gardés 7 jours (42), plus environ 23 quotidiens, 8 hebdomadaires et 9 mensuels : une centaine au plus, sous la limite de 128. Pour des snapshots toutes les heures, ne pas cocher l'immuabilité : 7 jours d'instantanés horaires immuables feraient 168 snapshots, au-delà de la limite.
 
@@ -283,6 +330,12 @@ Réglages pour le dossier `TimeMachine` (créé en section 8.2) :
 > **Espace :** chaque snapshot garde les blocs que Time Machine a réécrits depuis, y compris ceux des anciennes sauvegardes que le Mac élague. Prévoir de la marge sur le volume au-delà du quota du dossier (section 8.1), et regarder l'occupation réelle au bout de quelques semaines avec **Snapshot > Calculate Size**.
 
 Pour revenir en arrière après une image abîmée : arrêter d'abord Time Machine sur le Mac concerné (décocher la sauvegarde automatique), puis **Snapshot Replication > Snapshots**, dossier `TimeMachine`, **Snapshot > Snapshot List**, choisir le snapshot de la veille et le restaurer, en acceptant de prendre un snapshot de l'état actuel avant la restauration. Réactiver ensuite Time Machine. Si l'image de la veille est elle aussi refusée, essayer la précédente : un snapshot pris pendant une sauvegarde peut capturer un état intermédiaire.
+
+!img img/snap-menu.jpg | Instantanés, dossier sélectionné : menu Instantané > Liste d'instantané. Calculer la taille est dans le même menu.
+crop 200 60 800 300
+box 212 112 300 139 1
+box 224 170 380 192 2
+width 0.7
 
 # 8. Dossier partagé Time Machine
 
@@ -318,7 +371,7 @@ Choisir le facteur selon l'usage du Mac :
 
 ## 8.2 Créer le dossier partagé
 
-**Control Panel > Shared Folder > Create > Create Shared Folder**, et dans l'assistant :
+**Control Panel > Shared Folder > Create > Create Shared Folder** (**Panneau de configuration > Dossier partagé > Créer > Créer**), et dans l'assistant :
 
 |= 200.0 75.0 206.9 header
 | Option | Choix | Pourquoi |
@@ -333,27 +386,76 @@ Choisir le facteur selon l'usage du Mac :
 | Enable file compression | Décoché | Une sauvegarde chiffrée ne se compresse pas : du processeur pour rien. |
 | Enable shared folder quota | Coché, 2 To | La somme des quotas des comptes (8.1). |
 
+!img img/tm-dossier-1.jpg | Étape 1 : nom (1), dossier caché et sous-dossiers masqués (2), corbeille décochée (3).
+crop 0 15 800 440
+box 217 132 572 164 1
+box 38 236 592 298 2
+box 38 305 202 331 3
+
+!img img/tm-dossier-2.jpg | Étape 2 : ni chiffrement de dossier ni WriteOnce, laisser Ignorer.
+crop 0 15 800 345
+box 38 136 132 160 1
+width 0.85
+
+!img img/tm-dossier-3.jpg | Étape 3 : somme de contrôle cochée (1), compression décochée (2), quota du dossier (3).
+crop 0 15 800 345
+box 38 135 662 161 1
+box 64 224 342 249 2
+box 38 257 330 320 3
+
 À l'étape des permissions, donner **Read/Write** au groupe `administrators` si tu veux pouvoir regarder le contenu, et ne rien toucher pour le groupe `users` : laisser toutes ses cases vides. Les comptes Time Machine recevront leurs droits à leur création (8.3).
+
+!img img/tm-dossier-4.jpg | Permissions : afficher les Groupes locaux (1), Lecture/écriture pour administrators (2), aucune case pour users (3).
+crop 0 15 800 300
+box 38 134 302 162 1
+box 40 199 760 229 2
+box 40 258 760 288 3
 
 !! **« No access » l'emporte sur tout :** dans DSM, une case « No access » cochée pour un groupe prime sur le « Read/Write » donné à un compte de ce groupe. Cocher « No access » pour le groupe `users` (dont font partie tous les comptes) bloquerait donc les comptes Time Machine. Pour fermer le dossier aux autres comptes, il suffit de ne leur donner aucun droit.
 
 ## 8.3 Créer un compte par Mac
 
-**Control Panel > User & Group > User > Create**, une fois par Mac :
+**Control Panel > User & Group > User > Create** (**Panneau de configuration > Utilisateur et groupe > Utilisateur > Créer**), une fois par Mac :
 
 - **Nom :** `tm-` suivi du nom du Mac, par exemple `tm-macbook`. Mot de passe aléatoire et long : le Mac le garde dans son trousseau, personne n'a à le taper au quotidien. Le noter dans ton gestionnaire de mots de passe. Pas d'adresse e-mail.
 
 - **Groupes :** `users` seulement, surtout pas `administrators`.
 
+!img img/user-2.jpg | Rejoindre les groupes : administrators décoché (1), users seulement, coché d'office (2).
+crop 0 30 800 280
+box 40 180 760 208 1
+box 40 237 760 266 2
+width 0.85
+
 - **Assign shared folders permissions :** `TimeMachine` en **Read/Write** ; pour tous les autres dossiers, aucune case (ou **No access**, ce qui ne pose pas de problème au niveau d'un compte).
+
+!img img/user-3.jpg | Permissions sur les dossiers partagés : Lecture/écriture sur TimeMachine. La remarque en bas rappelle l'ordre de priorité : Aucun accès, puis Lecture/écriture, puis Lecture seule.
+crop 0 30 800 545
+box 40 322 760 352 1
+box 36 492 744 538 2
 
 - **Assign user quota :** sur la ligne du volume ou du dossier `TimeMachine`, le quota de ce Mac (8.1).
 
+!img img/user-4.jpg | Quota utilisateur : la valeur sur la ligne TimeMachine (ici 50 Go, sur le volume de la démo).
+crop 0 30 800 450
+box 40 312 736 343 1
+
 - **Assign application permissions :** autoriser **SMB** seulement. Refuser DSM, File Station, et tout le reste.
+
+!img img/user-5.jpg | Permissions sur l'application : tout refuser d'un clic dans l'en-tête (1), puis autoriser SMB (2).
+crop 0 30 800 545
+box 644 172 732 197 1
+box 40 322 760 352 2
 
 ## 8.4 Service SMB
 
-Dans **Control Panel > File Services**, onglet **SMB** : cocher **Enable SMB service**. Puis **Advanced Settings**, et régler :
+Dans **Control Panel > File Services** (**Services de fichiers**), onglet **SMB** : cocher **Enable SMB service**. Puis **Advanced Settings** (**Paramètres avancés**), et régler :
+
+!img img/smb-1.jpg | Services de fichiers > SMB : activer le service (1), puis Paramètres avancés (2).
+crop 0 80 800 432
+box 20 175 202 199 1
+box 50 394 214 423 2
+width 0.85
 
 |= 210.0 130.0 141.9 header
 | Option | Valeur | Remarque |
@@ -365,6 +467,20 @@ Dans **Control Panel > File Services**, onglet **SMB** : cocher **Enable SMB ser
 | Transport encryption mode | Valeur par défaut | Le chiffrement SMB ralentit les transferts, et la sauvegarde est déjà chiffrée par le Mac. |
 | Server signing | Valeur par défaut | Voir la section 8.9 en cas d'échec sous macOS Tahoe. |
 
+!img img/smb-avance.jpg | Paramètres avancés > Général : protocoles (1), Opportunistic Locking et location de fichiers SMB2 (2), handles durables (3).
+crop 100 0 700 560
+box 375 131 580 196 1
+box 126 303 422 364 2
+box 126 474 662 518 3
+width 0.8
+
+Dans le même dialogue, onglet **macOS** : laisser coché **Activer le module VFS pour convertir les caractères spéciaux du Mac** (coché par défaut). Il traduit les caractères qu'un nom de fichier peut contenir sur Mac et pas sur le NAS.
+
+!img img/smb-macos.jpg | Paramètres avancés > macOS : module VFS coché.
+crop 100 0 700 320
+box 126 99 607 124 1
+width 0.8
+
 Laisser **AFP** désactivé : Apple a retiré la sauvegarde Time Machine par AFP, et Synology recommande SMB seul.
 
 ## 8.5 Annonce Bonjour
@@ -374,6 +490,23 @@ Toujours dans **Control Panel > File Services**, onglet **Advanced** :
 - Cocher **Enable Bonjour service discovery** et **Enable Bonjour Time Machine broadcast via SMB**.
 
 - Cliquer sur **Set Time Machine Folders** et cocher `TimeMachine`.
+
+!img img/bonjour.jpg | Services de fichiers > Avancé > Bonjour : diffusion Time Machine via SMB (1), puis Configurer les dossiers de Time Machine (2).
+crop 0 290 800 505
+box 20 335 492 360 1
+box 50 403 412 427 1
+box 50 468 345 498 2
+
+!img img/bonjour-dossiers.jpg | Cocher TimeMachine dans la liste, puis Sauvegarder.
+crop 175 55 625 585
+box 195 470 605 500 1
+width 0.6
+
+Au moment d'**Appliquer**, DSM prévient qu'il active de lui-même SMB3, Opportunistic Locking, les handles durables et le bail SMB2 : ce sont justement les réglages de 8.4. Accepter avec **OK**.
+
+!img img/bonjour-confirm.jpg | Confirmation affichée par DSM.
+crop 40 222 760 380
+width 0.85
 
 Le dossier apparaît alors directement dans la liste des disques de sauvegarde proposés par les Mac du réseau local.
 
@@ -528,6 +661,11 @@ Synology Photos est l'application de Synology pour les photos : un site web sur 
 
 - **Dossiers personnels :** **Control Panel > User & Group > Advanced**, section **User Home**, cocher **Enable user home service**. DSM crée le dossier partagé `homes`, et chaque compte y a son dossier, qui apparaît sous le nom `home` dans le Finder. Les comptes Time Machine en reçoivent un aussi, dont ils n'ont pas l'usage : pour qu'ils ne puissent rien y stocker, leur fixer un quota de 1 Go sur `homes` (compte, **Edit > Quota**).
 
+!img img/homes.jpg | Utilisateur et groupe > Avancé > Accueil utilisateur.
+crop 0 320 800 530
+box 20 362 334 388 1
+width 0.85
+
 - **Paquet :** **Package Center**, installer **Synology Photos**.
 
 - **Droits :** dans **Control Panel > User & Group**, compte du quotidien (6.3), **Edit > Applications** : autoriser **Synology Photos**, en plus de SMB.
@@ -656,7 +794,13 @@ DS finder sert surtout à recevoir les alertes du NAS en notification, en plus d
 
 - Installer DS finder, **Ajouter un appareil existant**, saisir l'adresse locale du NAS (`nas-famille.local` ou son IP), le compte administrateur, cocher HTTPS. À faire sur le Wi-Fi de la maison, ou à travers Tailscale.
 
-- Dans DSM, **Control Panel > Notification > Push Service** : l'iPhone apparaît dans les appareils associés (**Manage Devices**). Envoyer une notification de test.
+- Dans DS finder, activer les notifications Push pour ce NAS (le commutateur dans les réglages de l'appareil). Dans DSM, **Control Panel > Notification > Push Service** (**Service Push**), **Configurer > Périphérique** rappelle la marche à suivre ; l'iPhone apparaît ensuite dans la liste des appareils associés. Envoyer une notification de test.
+
+!img img/push.jpg | Notification > Service Push (1) > Configurer > Périphérique (2).
+crop 0 80 800 525
+box 80 91 188 121 1
+box 351 451 509 481 2
+width 0.85
 
 - **Control Panel > Notification > Rules** : choisir les événements qui déclenchent une notification. Les réglages par défaut couvrent les pannes de disque et de volume.
 

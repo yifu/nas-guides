@@ -22,7 +22,7 @@ make clean
 
 Dépendances :
 
-- Arch Linux : `sudo pacman -S make python-reportlab python-pypdf ttf-dejavu`
+- Arch Linux : `sudo pacman -S make python-reportlab python-pypdf python-pillow ttf-dejavu`
 - macOS : `brew install --cask font-dejavu`, puis dans le dépôt
   `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
   et `make PYTHON=.venv/bin/python`
@@ -47,6 +47,7 @@ Un bloc par paragraphe, blocs séparés par une ligne vide :
 | `!flow` puis `Étape \| description` | schéma vertical d'étapes (`*` devant une étape la met en avant) |
 | `!todo Titre` | encadré final « à faire » ; `~ ` pour une note en petit |
 | `::: Titre` … `:::` | encadré gris, avec paragraphes, puces et code |
+| `!img img/x.jpg \| Légende` | capture d'écran ; lignes suivantes facultatives, en pixels de l'image d'origine : `crop x0 y0 x1 y1` (recadrage), `box x0 y0 x1 y1 [n]` (cadre rouge, numéroté si `n`), `width 0.8` (largeur relative) |
 
 Dans le texte : `` `code` `` et `**gras**`. Un paragraphe ou un encadré qui se
 termine par « : » reste sur la même page que le bloc suivant.

@@ -25,6 +25,11 @@ blank lines:
   !flow                            vertical flow diagram, then one line per
   Step | description               step; "*" before a step highlights it,
                                    " // " in a description forces a line break
+  !img path | caption              screenshot (path relative to the source file),
+  crop x0 y0 x1 y1                 then optional lines, in source image pixels:
+  box x0 y0 x1 y1 [n]              crop area, red frames with an optional
+  width 0.8                        number badge, display width (fraction of
+                                   the text width, default 1)
   anything else                    body paragraph
 Inline markup: `code` and **bold**.
 
@@ -560,6 +565,59 @@ def make_toc():
     return toc
 
 
+# ----------------------------------------------------------- screenshots ---
+img_caption = ParagraphStyle("img_caption", fontName=SANS, fontSize=7.8, leading=10.5,
+                             textColor=MUTED, spaceBefore=3, spaceAfter=8)
+BOX_RED = (217, 48, 37)
+
+
+def screenshot(spec, base_dir):
+    """Screenshot with red frames and number badges drawn on it, plus a caption."""
+    from io import BytesIO
+    from PIL import Image as PILImage, ImageDraw, ImageFont
+    from reportlab.platypus import Image as RLImage
+
+    img = PILImage.open(os.path.join(base_dir, spec["path"])).convert("RGB")
+    ox, oy = 0.0, 0.0
+    if spec["crop"]:
+        ox, oy = spec["crop"][0], spec["crop"][1]
+        img = img.crop(tuple(int(round(v)) for v in spec["crop"]))
+    # draw at 2x so that frames and badges stay smooth once scaled down
+    k = 2
+    img = img.resize((img.width * k, img.height * k), PILImage.LANCZOS)
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype(FONT_DIR + "DejaVuSans-Bold.ttf", 11 * k)
+    for (x0, y0, x1, y1), label in spec["boxes"]:
+        r = [(x0 - ox) * k, (y0 - oy) * k, (x1 - ox) * k, (y1 - oy) * k]
+        draw.rounded_rectangle(r, radius=4 * k, outline=BOX_RED, width=2 * k)
+        if label:
+            rad = 8 * k
+            cx, cy = r[0], r[1]
+            draw.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=BOX_RED)
+            draw.text((cx, cy), label, fill="white", font=font, anchor="mm")
+    buf = BytesIO()
+    img.save(buf, "JPEG", quality=85, optimize=True)
+    buf.seek(0)
+    width = FRAME_W * spec["width"]
+    height = width * img.height / img.width
+    max_h = 0.55 * (PAGE_H - TOP - MARGIN)
+    if height > max_h:
+        width, height = width * max_h / height, max_h
+    pic = RLImage(buf, width=width, height=height)
+    frame = Table([[pic]], colWidths=[width])
+    frame.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 0.6, RULE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    frame.hAlign = "CENTER"
+    parts = [Spacer(1, 2), frame]
+    if spec["caption"]:
+        cap = ParagraphStyle("img_caption_c", parent=img_caption, alignment=1)
+        parts.append(Paragraph(inline(spec["caption"]), cap))
+    return KeepTogether(parts)
+
+
 # ---------------------------------------------------------------- parser ---
 def parse(src):
     lines = src.split("\n")
@@ -631,6 +689,22 @@ def parse(src):
             blocks.append(("flow", steps))
         elif first.startswith("!todo "):
             blocks.append(("todo", (first[6:], chunk[1:])))
+        elif first.startswith("!img "):
+            path, _, caption = first[5:].partition("|")
+            spec = {"path": path.strip(), "caption": caption.strip(), "crop": None,
+                    "boxes": [], "width": 1.0}
+            for r in chunk[1:]:
+                word, *args = r.split()
+                if word == "crop":
+                    spec["crop"] = tuple(float(a) for a in args)
+                elif word == "box":
+                    spec["boxes"].append((tuple(float(a) for a in args[:4]),
+                                          args[4] if len(args) > 4 else None))
+                elif word == "width":
+                    spec["width"] = float(args[0])
+                else:
+                    sys.exit(f"unknown !img option: {r}")
+            blocks.append(("image", spec))
         else:
             blocks.append(("para", " ".join(chunk)))
     return blocks
@@ -698,6 +772,8 @@ def build(src_path, out_path):
         elif kind == "todo":
             emit(TocAnchor(data[0]), True)
             emit(todo_box(*data))
+        elif kind == "image":
+            emit(screenshot(data, os.path.dirname(os.path.abspath(src_path))))
     if pending:
         story.extend(pending)
     doc = GuideDoc(out_path, doc_title, header)
