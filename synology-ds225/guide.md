@@ -248,7 +248,7 @@ Si personne ne dépose de fichiers directement sur le NAS et qu'il ne sert qu'à
 
 Un snapshot est une image en lecture seule d'un dossier partagé à un instant donné. Btrfs le prend en une fraction de seconde et ne stocke ensuite que ce qui change : tant que rien ne bouge, il ne coûte presque rien. Il protège contre la suppression accidentelle, la mauvaise modification, et le rançongiciel qui chiffre les fichiers depuis un ordinateur : un snapshot ne se modifie pas depuis le réseau, même avec le compte du propriétaire des fichiers.
 
-Un snapshot **n'est pas une sauvegarde** : il vit sur les mêmes disques. Si le pool meurt, les snapshots meurent avec lui (section 10).
+Un snapshot **n'est pas une sauvegarde** : il vit sur les mêmes disques. Si le pool meurt, les snapshots meurent avec lui (section 11).
 
 > **Snapshots immuables :** une option rend un snapshot impossible à supprimer pendant une période de protection, par qui que ce soit, administrateur compris. C'est la défense contre un attaquant qui aurait pris le compte administrateur et effacerait les snapshots avant de chiffrer les données. Synology recommande une protection de 7 à 14 jours. Contrepartie : pendant cette période, l'espace occupé par ces snapshots ne peut pas être libéré, et un dossier partagé qui a des snapshots immuables ne peut pas être supprimé.
 
@@ -518,7 +518,7 @@ Objectif : une copie de la bibliothèque Photos (iPhone, iCloud, Mac) sur le NAS
 | Export depuis Photos sur le Mac (9.4) | Toute la bibliothèque, ancienne comprise, rangée par année et mois. | Complet, métadonnées conservées, relançable sans tout refaire. | Mac allumé, commande à relancer de temps en temps. Outil en ligne de commande. |
 | icloudpd sur le NAS (9.6) | Directement depuis iCloud. | Ni Mac ni iPhone. | Outil non officiel, réauthentification tous les deux mois, incompatible avec la protection avancée des données d'iCloud. |
 
-**Choisir l'un des deux premiers**, selon la présence d'un Mac allumé régulièrement : l'export depuis le Mac s'il y en a un, l'app de l'iPhone sinon. Les combiner remplit le NAS de doublons : avec iCloud Photos, l'iPhone voit toute la bibliothèque, comme le Mac, et les deux enverraient les mêmes photos dans deux dossiers différents. icloudpd reste une option de dépannage.
+**Au quotidien, le plus simple est l'app de l'iPhone (9.3)** : on prend ses photos comme d'habitude avec l'appareil photo de l'iPhone, iCloud les synchronise comme avant, et l'app Synology Photos les copie en plus sur le NAS, sans rien avoir à faire. L'export depuis le Mac (9.4) sert si la première sauvegarde de l'iPhone bloque sur les anciennes photos restées dans iCloud, ou pour obtenir une copie rangée par date. Ne pas faire tourner les deux en continu : avec iCloud Photos, l'iPhone voit toute la bibliothèque, comme le Mac, et les deux enverraient les mêmes photos dans deux dossiers différents. icloudpd reste une option de dépannage.
 
 Dans tous les cas, si un Mac a la bibliothèque Photos, la section 9.5 vaut la peine : elle fait de Time Machine une seconde sauvegarde complète des photos, sans rien installer.
 
@@ -552,7 +552,11 @@ Synology Photos est l'application de Synology pour les photos : un site web sur 
 
 - Pour la première fois, iPhone sur secteur et en Wi-Fi, activer la **sauvegarde ciblée** (Focused Backup) en touchant l'état de la sauvegarde, onglet **Plus**, et laisser l'app ouverte.
 
+Ensuite, rien à faire : chaque nouvelle photo part dans iCloud comme avant, et l'app la copie sur le NAS dès qu'iOS la laisse travailler. Ce n'est pas instantané : iOS accorde aux apps des moments d'activité en arrière-plan, plus fréquents quand l'iPhone est en charge sur le Wi-Fi, la nuit par exemple. Ouvrir l'app Synology Photos quelques secondes fait partir tout de suite ce qui attend. Une photo prise le matin est en général sur le NAS le soir même, ou le lendemain matin.
+
 Points à connaître :
+
+- **Dossier de destination :** par défaut, le dossier `Photos/MobileBackup/iPhone` du dossier personnel. On peut choisir un autre dossier de l'espace personnel lors de l'activation (chemin de destination personnalisé), mais pas un dossier partagé quelconque : seulement l'espace personnel ou le dossier partagé `photo` (9.2).
 
 - **Originaux dans iCloud :** avec « Optimiser le stockage de l'iPhone », l'iPhone ne garde qu'une version réduite des photos anciennes, et l'original doit être rapatrié depuis iCloud avant d'être envoyé au NAS. La première sauvegarde peut alors être très longue, ou bloquer sur certaines photos (icône d'erreur dans la vue chronologique). C'est le principal argument pour l'export depuis le Mac (9.4) quand il y en a un.
 
@@ -629,7 +633,48 @@ Time Machine sauvegarde la bibliothèque Photos du Mac comme n'importe quel fich
 
 La documentation du projet, `icloud-photos-downloader.github.io`, décrit l'installation en conteneur et l'authentification. Destination conseillée : un sous-dossier du dossier personnel, par exemple `/volume1/homes/papa/Photos/iCloud`, pour que Synology Photos l'affiche.
 
-# 10. Au-delà de ce guide : une vraie sauvegarde
+# 10. Applications pour l'iPhone
+
+Pas besoin de beaucoup d'applications : la plupart des usages passent par des apps déjà présentes sur l'iPhone. Classées par utilité :
+
+|= 110.0 85.0 286.9 header
+| Application | Pour qui | À quoi elle sert |
+| Synology Photos | Le propriétaire des photos | Sauvegarde automatique des photos vers le NAS (9.3), et consultation des photos du NAS : chronologie, albums, carte, partage par lien. |
+| Fichiers (Apple, déjà installée) | Tout le monde | Ouvrir les dossiers du NAS comme un disque, sans rien installer (10.1). |
+| DS finder (Synology) | L'administrateur | État du NAS (disques, volume, température), mises à jour, arrêt et redémarrage, et réception des alertes en notification (10.2). Ne s'ouvre qu'avec un compte administrateur. |
+| Synology Secure SignIn | L'administrateur | Codes de double authentification de DSM, ou validation d'une connexion d'un simple appui. Mots de passe d'Apple sait aussi produire ces codes. |
+| Tailscale | Tout le monde, facultatif | Accès au NAS hors de la maison, sans l'exposer sur Internet (6.3) : Synology Photos, Fichiers et DS finder fonctionnent alors comme à la maison. |
+| Infuse ou VLC | Pour les vidéos | Lire les films et vidéos rangés sur le NAS, directement depuis le partage SMB. Synology a retiré Video Station de DSM. |
+
+## 10.1 Fichiers : le NAS sans application
+
+Dans l'app **Fichiers**, onglet **Parcourir**, menu **...** en haut, **Se connecter au serveur**, puis `smb://nas-famille.local` (ou l'adresse IP), en tant qu'utilisateur enregistré, avec le compte du quotidien. Le NAS apparaît ensuite dans la colonne **Partagés**, avec le dossier personnel et les dossiers de données. On peut y ouvrir un PDF, enregistrer une pièce jointe depuis Mail (bouton Partager, **Enregistrer dans Fichiers**), ou copier des documents. Pas besoin de DS file, l'app de fichiers de Synology : Fichiers fait la même chose en SMB, et s'intègre à toutes les autres apps.
+
+## 10.2 DS finder et les alertes
+
+DS finder sert surtout à recevoir les alertes du NAS en notification, en plus des e-mails (6.1). Comme il exige un compte administrateur, il va sur l'iPhone de celui qui administre le NAS.
+
+- Installer DS finder, **Ajouter un appareil existant**, saisir l'adresse locale du NAS (`nas-famille.local` ou son IP), le compte administrateur, cocher HTTPS. À faire sur le Wi-Fi de la maison, ou à travers Tailscale.
+
+- Dans DSM, **Control Panel > Notification > Push Service** : l'iPhone apparaît dans les appareils associés (**Manage Devices**). Envoyer une notification de test.
+
+- **Control Panel > Notification > Rules** : choisir les événements qui déclenchent une notification. Les réglages par défaut couvrent les pannes de disque et de volume.
+
+Les notifications partent du NAS vers les serveurs de Synology, qui les relaient à l'iPhone : ça ne demande ni QuickConnect ni port ouvert sur la box.
+
+> **Active Insight :** la supervision en ligne de Synology fait double emploi avec les alertes ci-dessus pour un seul NAS. Elle envoie en continu des mesures du NAS aux serveurs de Synology, et selon NAS Compares, elle n'est plus offerte aux nouveaux utilisateurs depuis juin 2026 (environ 30 dollars par an et par NAS). Pas utile ici.
+
+## 10.3 Côté compte Apple
+
+Puisque les photos vivent aussi dans iCloud, deux réglages du compte Apple du propriétaire des photos valent la peine, dans **Réglages > [nom] > Connexion et sécurité** :
+
+- **Récupération du compte :** ajouter un **contact de récupération**, par exemple la personne qui administre le NAS. S'il perd l'accès à son compte Apple (mot de passe oublié, iPhone perdu), ce contact pourra l'aider à le récupérer sans voir ses données.
+
+- **Contact légataire :** désigne qui pourra accéder aux photos et aux données iCloud s'il décède. Apple fournit une clé d'accès à garder avec les papiers importants : le contact légataire la présentera avec un certificat de décès. Sans contact légataire, Apple exige une décision de justice.
+
+Et vérifier, dans **Réglages > [nom] > iCloud > Photos**, que **Synchroniser cet iPhone** est bien activé : c'est ce qui envoie les photos dans iCloud.
+
+# 11. Au-delà de ce guide : une vraie sauvegarde
 
 Le NAS protège contre la panne d'un disque (SHR), les fichiers effacés et le rançongiciel (snapshots), et sauvegarde les Mac (Time Machine) et les photos (section 9). Il ne protège pas contre ce qui frappe le NAS entier : vol, incendie, dégât des eaux, surtension, erreur dans DSM. Pour les sauvegardes Time Machine et les photos, qui existent aussi sur les Mac et dans iCloud, c'est acceptable. Pour les fichiers qui ne vivent **que** sur le NAS, il faut une copie ailleurs.
 
